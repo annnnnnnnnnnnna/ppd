@@ -5,14 +5,14 @@
 	<title>PPD</title>
 </head>
 <body  onload="init()" oncontextmenu="return false;">
-	右クリックで×（赤くなる）
+	右クリックで×
 	<canvas id="main" width="550" height="550"></canvas>
 <script type="text/javascript">
 const canvas = document.getElementById('main');
 const ctx    = canvas.getContext('2d');
-var baseWidth = 48;
-var mode = -1;
-var arr = [
+const baseWidth = 48;
+let mode = -1;
+let arr = [
   [0, 0, 0, 0, 0, 0, 0], 
   [0, 0, 0, 0, 0, 0, 0], 
   [0, 0, 0, 0, 0, 0, 0], 
@@ -22,9 +22,9 @@ var arr = [
   [0, 0, 0, 0, 0, 0, 0]
 ];
 
-var q = [0,0,0,0,0,0,0];
-var yoko = ["", "", "", "", "", "", ""];
-var tate = ["", "", "", "", "", "", ""];
+let q = [0,0,0,0,0,0,0];
+let yoko = ["", "", "", "", "", "", ""];
+let tate = ["", "", "", "", "", "", ""];
 
 const n0 = new Image(); n0.src = "./0.png";
 const n1 = new Image(); n1.src = "./1.png";
@@ -34,8 +34,9 @@ const n4 = new Image(); n4.src = "./4.png";
 const n5 = new Image(); n5.src = "./5.png";
 const n6 = new Image(); n6.src = "./6.png";
 const n7 = new Image(); n7.src = "./7.png";
+const nX = new Image(); nX.src = "./x.png";
 const nImgs = [n0, n1, n2, n3, n4, n5, n6, n7];
-const spNum = [127, 125, 123, 119, 111, 95, 85];
+const spNum = [127, 125, 123, 119, 107, 111, 109, 107, 95, 93, 91, 87, 85];
 
 class Random {
 	constructor(seed = 88675123) {
@@ -59,8 +60,8 @@ class Random {
 }
 
 function init(){
-	for (i=0; i <= 7; i++) {
-		h = baseWidth * 4 + baseWidth * i;
+	for (let i=0; i <= 7; i++) {
+		let h = baseWidth * 4 + baseWidth * i;
 		if (i == 5) ctx.strokeStyle = '#000';
 		else 	ctx.strokeStyle = '#bbb';
 		ctx.beginPath();
@@ -71,75 +72,76 @@ function init(){
 		ctx.stroke();
 	}
 
-	canvas.addEventListener('mousedown', function(e){
-		let {x, y} = getCell(e);
-		if(0 <= x && x <= 6){
-			if(0 <= y && y <= 6){
-				var now = arr[x][y];
-				if (e.which == 3) mode = 2;
-				else if (now == 0) mode = 1;
-				else mode = 0;
-				fill(x, y);
-			}
-		}
-	}, false);
-	canvas.addEventListener('mousemove', function(e){
-		if (mode == -1) return;
-		let {x, y} = getCell(e);
-		if(0 <= x && x <= 6){
-			if(0 <= y && y <= 6){
-				fill(x, y);
-			}
-		}
-	}, false);
-	canvas.addEventListener('mouseup', function(e){
-		mode = -1;
-		check();
-	}, false);
+	canvas.addEventListener('mousedown', md, false);
+	canvas.addEventListener('mousemove', mv, false);
+	canvas.addEventListener('mouseup', mu, false);
+
+	canvas.addEventListener('touchstart', md, false);
+	canvas.addEventListener('touchmove', mv, false);
+	canvas.addEventListener('touchend', mu, false);
+
 	ask((new Date()).getTime(), 0);
 }
 
+function md(e){
+	let {x, y} = getCell(e);
+	if(0 <= x && x <= 6){
+		if(0 <= y && y <= 6){
+			let now = arr[x][y];
+			if (e.which == 3) mode = 2;
+			else if (now == 0) mode = 1;
+			else mode = 0;
+			fill(x, y);
+		}
+	}
+}
+
+function mv(e){
+	if (mode == -1) return;
+	let {x, y} = getCell(e);
+	if(0 <= x && x <= 6){
+		if(0 <= y && y <= 6){
+			fill(x, y);
+		}
+	}
+}
+
+function mu(e){
+	mode = -1;
+	check();
+}
+
 function getCell(e) {
-	var x = Math.floor((e.offsetX - baseWidth * 4)/(baseWidth));
-	var y = Math.floor((e.offsetY - baseWidth * 4)/(baseWidth));
+	let x = Math.floor((e.offsetX - baseWidth * 4)/(baseWidth));
+	let y = Math.floor((e.offsetY - baseWidth * 4)/(baseWidth));
 	return {x: x, y: y}
 }
 
 function ask(seed, diff) {
-	var random = new Random(seed);
+	let random = new Random(seed);
 	
-	var sp = 3 - diff;
-	for(i = 0; i < 7; i++) {
-		var d = random.nextInt(128);
+	let sp = 3 - diff;
+	for(let i = 0; i < 7; i++) {
+		let d = random.nextInt(128);
 		q[i] = d;
 	}
-	for (i = 0; i < sp; i++) {
+	for (let i = 0; i < sp; i++) {
 		q[random.nextInt(7)] = spNum[random.nextInt(spNum.length)];
 	}
-	for(i = 0; i < 7; i++) {
-		var d = q[i];
-		var yokoKey = "    ";
-		if (d == 0) {
-			yokoKey = "   0";
-			yoko[i] = "   0";
-		}else {
-			var b = ("0000000" + d.toString(2)).slice(-7);
-			var ren = 0;
-			yokoKey = "    ";
-			for (j = 0; j < 7; j++) {
-				if (b.charAt(j) == '1') ren++;
-				else if (ren > 0) {
-					yokoKey = yokoKey + "" + ren;
-					ren = 0;
-				}
-			}
-			if (ren > 0) yokoKey = yokoKey + "" + ren;
-			yokoKey = yokoKey.slice(-4);
-			yoko[i] = yokoKey;
-		}
-		posY = baseWidth * 4 + baseWidth * i + 1;
-		for (j = 0; j < 4; j++) {
-			posX = baseWidth * j + 1;
+	q[0] = 104;
+	q[1] = 16;
+	q[2] = 85;
+	q[3] = 98;
+	q[4] = 68;
+	q[5] = 125;
+	q[6] = 85;
+	for(let i = 0; i < 7; i++) {
+		let d = q[i];
+		let yokoKey = dec2key(d);
+		yoko[i] = yokoKey;
+		let posY = baseWidth * 4 + baseWidth * i + 1;
+		for (let j = 0; j < 4; j++) {
+			let posX = baseWidth * j + 1;
 			if (yokoKey.charAt(j) != ' ') {
 				ctx.drawImage(nImgs[yokoKey.charAt(j)*1], posY, posX, baseWidth-2, baseWidth-2);
 			} else {
@@ -149,24 +151,18 @@ function ask(seed, diff) {
 		}
 	}
 
-	for (j = 0; j < 7; j++) {
-		var ren = 0;
-		var tateKey = "    ";
-		for(i = 0; i < 7; i++) {
-			var b = ("0000000" + q[i].toString(2)).slice(-7);
-			if (b.charAt(j) == '1') ren++;
-			else if (ren > 0) {
-				tateKey = tateKey + "" + ren;
-				ren = 0;
-			}
+	for (let j = 0; j < 7; j++) {
+		let ren = 0;
+		let b = "";
+		for(let i = 0; i < 7; i++) {
+			b = b + ("0000000" + q[i].toString(2)).slice(-7).charAt(j);
 		}
-		if (ren > 0) tateKey = tateKey + "" + ren;
-		if (tateKey.length == 4) tate[j] = "   0";
-		else tate[j] = tateKey.slice(-4);
-		tateKey = tateKey.slice(-4);
-		posX = baseWidth * 4 + baseWidth * j + 1;
-		for (i = 0; i < 4; i++) {
-			posY = baseWidth * i + 1;
+		let tateKey = dec2key(parseInt(b,2));
+		tate[j] = tateKey;
+
+		let posX = baseWidth * 4 + baseWidth * j + 1;
+		for (let i = 0; i < 4; i++) {
+			let posY = baseWidth * i + 1;
 			if (tateKey.charAt(i) != ' ') {
 				ctx.drawImage(nImgs[tateKey.charAt(i)*1], posY, posX, baseWidth-2, baseWidth-2);
 			} else {
@@ -180,32 +176,63 @@ function ask(seed, diff) {
 
 function fill(x,y) {
 	if (mode == -1) return;
-	posX = baseWidth * 4 + baseWidth * x + 1;
-	posY = baseWidth * 4 + baseWidth * y + 1;
-	if (mode == 1) ctx.fillStyle = '#000';
-	else if (mode == 0) ctx.fillStyle = '#fff';
-	else if (mode == 2) ctx.fillStyle = '#f00';
+	let posX = baseWidth * 4 + baseWidth * x + 1;
+	let posY = baseWidth * 4 + baseWidth * y + 1;
+	if (mode == 1) {
+		ctx.fillStyle = '#000';
+		ctx.fillRect(posX, posY, baseWidth-2, baseWidth-2);
+	} else if (mode == 0) {
+		ctx.fillStyle = '#fff';
+		ctx.fillRect(posX, posY, baseWidth-2, baseWidth-2);
+	} else if (mode == 2) {
+		ctx.drawImage(nX , posX, posY, baseWidth-2, baseWidth-2);
+	}
 	arr[x][y] = mode;
-	ctx.fillRect(posX, posY, baseWidth-2, baseWidth-2);
 }
 
 function check() {
-	var ok = true;
+	let ok = true;
 	for(i = 0; i < 7; i++) {
-		if (q[i] != arr2dec(i)) ok = false;
+		let {decI, decJ} = arr2dec(i)
+		if (yoko[i] != dec2key(decI)) ok = false;
+		if (tate[i] != dec2key(decJ)) ok = false;
 	}
 	if (ok) alert("ok");
 }
-function arr2dec(i) {
-	var str = "";
-	for(j = 0; j < 7; j++) {
-		if (arr[i][j] == 1) {
-			str = str + "1";
-		} else {
-			str = str + "0";
+
+function dec2key(d) {
+	if (d == 0) return "   0";
+	let b = ("0000000" + d.toString(2)).slice(-7);
+	let ren = 0;
+	let key = "    ";
+	for (let j = 0; j < 7; j++) {
+		if (b.charAt(j) == '1') ren++;
+		else if (ren > 0) {
+			key = key + "" + ren;
+			ren = 0;
 		}
 	}
-	return parseInt(str,2);
+	if (ren > 0) key = key + "" + ren;
+	key = key.slice(-4);
+	return key;
+}
+
+function arr2dec(i) {
+	let strI = "";
+	let strJ = "";
+	for(let j = 0; j < 7; j++) {
+		if (arr[i][j] == 1) {
+			strI = strI + "1";
+		} else {
+			strI = strI + "0";
+		}
+		if (arr[j][i] == 1) {
+			strJ = strJ + "1";
+		} else {
+			strJ = strJ + "0";
+		}
+	}
+	return {decI: parseInt(strI,2), decJ: parseInt(strJ,2)}
 }
 </script>
 </body>
